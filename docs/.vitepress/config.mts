@@ -2,25 +2,30 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   base: '/EndymionBlog/',
-  title: 'EndymionLee',
-  description: 'Software Engineer',
+  title: 'Endymion',
+  description: 'Notes on AI, Go and Software Engineering',
   lang: 'zh-CN',
   lastUpdated: true,
   cleanUrls: true,
 
   head: [
     ['link', { rel: 'icon', href: '/favicon.svg' }],
-    ['meta', { name: 'author', content: 'EndymionLee' }],
+    ['meta', { name: 'author', content: 'Endymion' }],
+    ['style', {}, `
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+    `],
   ],
 
   themeConfig: {
-    logo: { src: '/avatar.svg', width: 32, height: 32 },
+    logo: { src: '/favicon.svg', width: 24, height: 24 },
     siteTitle: 'Endymion',
 
     nav: [
-      { text: '首页', link: '/' },
-      { text: '关于', link: '/about' },
-      { text: '项目', link: '/projects' },
+      { text: 'Blog', link: '/' },
+      { text: 'Projects', link: '/projects' },
     ],
 
     socialLinks: [
@@ -28,8 +33,8 @@ export default defineConfig({
     ],
 
     footer: {
-      message: 'Built with <a href="https://vitepress.dev">VitePress</a> ❤️',
-      copyright: 'Copyright © 2026 EndymionLee',
+      message: 'Built with <a href="https://vitepress.dev">VitePress</a>',
+      copyright: 'Copyright © 2026 Endymion',
     },
 
     search: {
@@ -44,11 +49,6 @@ export default defineConfig({
           },
         },
       },
-    },
-
-    editLink: {
-      pattern: 'https://github.com/EndymionLee/EndymionBlog/edit/main/docs/:path',
-      text: '在 GitHub 上编辑此页',
     },
 
     lastUpdatedText: '最后更新',

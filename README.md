@@ -21,7 +21,7 @@ npm run preview # 预览
 ```bash
 git remote add origin git@github.com:EndymionLee/EndymionBlog.git
 git branch -M main
-git push -u origin main
+git push
 ```
 
 push 到 main 分支后，GitHub Actions 自动构建部署。
