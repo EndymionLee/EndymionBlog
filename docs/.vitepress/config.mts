@@ -24,8 +24,9 @@ export default defineConfig({
     siteTitle: 'Endymion',
 
     nav: [
-      { text: 'Blog', link: '/' },
-      { text: 'Projects', link: '/projects' },
+      { text: '博客', link: '/' },
+      { text: '分类', link: '/categories' },
+      { text: '项目', link: '/projects' },
     ],
 
     socialLinks: [

@@ -4,6 +4,7 @@ export default createContentLoader('**/*.md', {
   transform(raw) {
     return raw
       .filter(p => p.frontmatter?.title)
+      .filter(p => !['/', '/categories', '/about', '/projects'].includes(p.url))
       .map(p => ({
         url: p.url,
         frontmatter: {

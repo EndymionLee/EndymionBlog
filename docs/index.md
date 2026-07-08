@@ -22,7 +22,6 @@ const base = '/EndymionBlog'
 
   <div v-else class="post-grid">
     <a v-for="post of posts" :key="post.url" :href="base + post.url" class="post-card">
-      <div class="cat">{{ post.url.split('/')[1] || 'note' }}</div>
       <div class="title">{{ post.frontmatter.title }}</div>
       <div class="date">{{ post.frontmatter.date || '' }}</div>
     </a>
@@ -104,14 +103,6 @@ const base = '/EndymionBlog'
 .post-card:hover {
   border-color: var(--vp-c-brand-1);
   box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-}
-.cat {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--vp-c-brand-1);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 6px;
 }
 .title {
   font-size: 0.95rem;
