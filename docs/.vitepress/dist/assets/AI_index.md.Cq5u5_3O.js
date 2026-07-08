@@ -1,0 +1,13 @@
+import{_ as n,o as e,c as s,a2 as l}from"./chunks/framework.BWuWLRhz.js";const g=JSON.parse('{"title":"AI Agent","description":"","frontmatter":{"title":"AI Agent"},"headers":[],"relativePath":"AI/index.md","filePath":"AI/index.md","lastUpdated":null}'),t={name:"AI/index.md"};function i(p,a,o,r,c,h){return e(),s("div",null,[...a[0]||(a[0]=[l(`<h1 id="🤖-ai-agent" tabindex="-1">🤖 AI Agent <a class="header-anchor" href="#🤖-ai-agent" aria-label="Permalink to &quot;🤖 AI Agent&quot;">​</a></h1><p>系统学习 AI Agent 相关技术的笔记与思考。</p><hr><h2 id="📑-文章列表" tabindex="-1">📑 文章列表 <a class="header-anchor" href="#📑-文章列表" aria-label="Permalink to &quot;📑 文章列表&quot;">​</a></h2><h3 id="loop-engineering" tabindex="-1">Loop Engineering <a class="header-anchor" href="#loop-engineering" aria-label="Permalink to &quot;Loop Engineering&quot;">​</a></h3><ul><li><a href="/AI/loop-engineering-part1"><strong>Loop Engineering（一）：什么是 Agent Loop</strong></a> — 理解 Agent 的核心循环机制</li></ul><h3 id="mcp-model-context-protocol" tabindex="-1">MCP (Model Context Protocol) <a class="header-anchor" href="#mcp-model-context-protocol" aria-label="Permalink to &quot;MCP (Model Context Protocol)&quot;">​</a></h3><ul><li><em>即将发布...</em></li></ul><h3 id="langgraph" tabindex="-1">LangGraph <a class="header-anchor" href="#langgraph" aria-label="Permalink to &quot;LangGraph&quot;">​</a></h3><ul><li><em>即将发布...</em></li></ul><h3 id="prompt-engineering" tabindex="-1">Prompt Engineering <a class="header-anchor" href="#prompt-engineering" aria-label="Permalink to &quot;Prompt Engineering&quot;">​</a></h3><ul><li><em>即将发布...</em></li></ul><hr><h2 id="📚-学习路线" tabindex="-1">📚 学习路线 <a class="header-anchor" href="#📚-学习路线" aria-label="Permalink to &quot;📚 学习路线&quot;">​</a></h2><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>AI Agent 基础</span></span>
+<span class="line"><span>    ↓</span></span>
+<span class="line"><span>Prompt Engineering</span></span>
+<span class="line"><span>    ↓</span></span>
+<span class="line"><span>Function Calling / Tool Use</span></span>
+<span class="line"><span>    ↓</span></span>
+<span class="line"><span>MCP 协议</span></span>
+<span class="line"><span>    ↓</span></span>
+<span class="line"><span>LangGraph / LangChain</span></span>
+<span class="line"><span>    ↓</span></span>
+<span class="line"><span>多 Agent 协作</span></span>
+<span class="line"><span>    ↓</span></span>
+<span class="line"><span>生产化部署</span></span></code></pre></div>`,15)])])}const u=n(t,[["render",i]]);export{g as __pageData,u as default};
