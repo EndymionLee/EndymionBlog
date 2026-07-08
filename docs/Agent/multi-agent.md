@@ -1,5 +1,7 @@
+---
 title: 多 Agent 协作
 date: 2026-03-12
+---
 
 # 多 Agent 协作
 
