@@ -1,0 +1,16 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Source files
+*.md text diff=markdown
+*.mts text
+*.yml text
+*.yaml text
+*.json text
+*.svg text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
