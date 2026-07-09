@@ -1,10 +1,16 @@
 ---
 layout: page
 ---
-
 <script setup>
+import { ref, computed } from 'vue'
 import { data as posts } from './.vitepress/posts.data'
 const base = ''
+const perPage = 9
+const page = ref(1)
+const totalPages = computed(() => Math.ceil(posts.length / perPage))
+const paged = computed(() => posts.slice((page.value - 1) * perPage, page.value * perPage))
+function prev() { if (page.value > 1) page.value-- }
+function next() { if (page.value < totalPages.value) page.value++ }
 </script>
 
 <div class="hero-wrap">
@@ -18,13 +24,19 @@ const base = ''
 <div class="section">
   <h2 class="section-title">近期文章</h2>
 
-  <div v-if="posts.length === 0" class="empty">暂无文章</div>
+<div v-if="posts.length === 0" class="empty">暂无文章</div>
 
-  <div v-else class="post-grid">
-    <a v-for="post of posts" :key="post.url" :href="base + post.url" class="post-card">
+<div v-else class="post-grid">
+    <a v-for="post of paged" :key="post.url" :href="base + post.url" class="post-card">
       <div class="title">{{ post.frontmatter.title }}</div>
       <div class="date">{{ post.frontmatter.date || '' }}</div>
     </a>
+  </div>
+
+<div v-if="totalPages > 1" class="pagination">
+    <button @click="prev" :disabled="page === 1" class="page-btn">上一页</button>
+    <span class="page-info">{{ page }} / {{ totalPages }}</span>
+    <button @click="next" :disabled="page === totalPages" class="page-btn">下一页</button>
   </div>
 </div>
 
@@ -114,5 +126,33 @@ const base = ''
   font-size: 0.8rem;
   color: var(--vp-c-text-3);
   margin-top: 8px;
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+.page-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: border-color .2s;
+}
+.page-btn:hover:not(:disabled) {
+  border-color: var(--vp-c-brand-1);
+}
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.page-info {
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
 }
 </style>

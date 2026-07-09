@@ -27,6 +27,5 @@ export default createContentLoader('**/*.md', {
         if (!b.frontmatter.date) return -1
         return b.frontmatter.date.localeCompare(a.frontmatter.date)
       })
-      .slice(0, 9)
   },
 })

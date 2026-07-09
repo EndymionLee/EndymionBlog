@@ -1,10 +1,7 @@
 ---
 title: Loop Engineering
-date: 2026-05-03
+date: 2026-03-12
 ---
-
-
-
 # Loop Engineering：从 Prompt 设计到循环设计
 
 ## 概述
@@ -15,7 +12,7 @@ Loop Engineering（循环工程）是 2026 年在 Agent 开发领域迅速流行
 
 它被认为是 Prompt Engineering 之后的下一个重要能力。Claude Code 团队、OpenAI 社区以及 Google 工程师的讨论将其推向了前台。([Business Insider](https://www.businessinsider.com/what-are-loops-ai-engineering-tips-2026-6))
 
-------
+---
 
 ## 为什么需要 Loop Engineering？
 
@@ -61,7 +58,7 @@ Agent →
 
 结论：**Prompt 不是不重要了，而是变成 Agent 内部自己生成。人真正要设计的是 Agent 怎么循环工作。**
 
-------
+---
 
 ## Loop 是什么？
 
@@ -94,7 +91,7 @@ Loop：
 
 整个就是一个 Loop。
 
-------
+---
 
 ## Prompt Engineering vs Loop Engineering
 
@@ -123,7 +120,7 @@ Loop
 
 Prompt 只占其中约 20%。
 
-------
+---
 
 ## 一个 Coding Agent Loop 实例
 
@@ -145,7 +142,7 @@ Prompt 只占其中约 20%。
 
 真正循环的核心是 `Read → Code → Test → Fix → Repeat`，而不是 `Prompt → Answer`。
 
-------
+---
 
 ## Loop 的核心模块
 
@@ -223,7 +220,7 @@ LLM Review
 失败 → 重新规划 → 继续执行 → 直到 Done
 ```
 
-------
+---
 
 ## 为什么 Loop Engineering 最近突然火了？
 
@@ -233,7 +230,7 @@ LLM Review
 2. **主流工具转型**：OpenAI Codex、Claude Code 等工具越来越强调 Goal 驱动，让 Agent 自主完成任务，而非每一步等待人工输入。([Business Insider](https://www.businessinsider.com/what-are-loops-ai-engineering-tips-2026-6))
 3. **工程实践发现**：Prompt 已不是主要瓶颈，真正影响效果的是任务拆解、工具调用、验证机制和停止条件——也就是整个控制流程。([LangChain](https://www.langchain.com/blog/the-art-of-loop-engineering))
 
-------
+---
 
 ## 举例：小说爬虫 Agent 的设计对比
 
@@ -279,10 +276,10 @@ while True:
 
 这里真正设计的是**整个工作流**，而不是某一句 Prompt。
 
-------
+---
 
 ## 参考来源
 
-- [Business Insider: Forget prompt engineering, 'Loop engineering' is all the rage now](https://www.businessinsider.com/what-are-loops-ai-engineering-tips-2026-6)
+- [Business Insider: Forget prompt engineering, &#39;Loop engineering&#39; is all the rage now](https://www.businessinsider.com/what-are-loops-ai-engineering-tips-2026-6)
 - [AI Builder Club: Loop Engineering Guide (2026)](https://www.aibuilderclub.com/blog/loop-engineering-guide-2026)
 - [LangChain: The Art of Loop Engineering](https://www.langchain.com/blog/the-art-of-loop-engineering)
