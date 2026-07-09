@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  base: '/EndymionBlog/',
+  base: '/',
   title: 'Endymion',
   description: 'Notes on AI, Go and Software Engineering',
   lang: 'zh-CN',

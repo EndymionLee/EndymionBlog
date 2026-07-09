@@ -4,7 +4,7 @@ layout: page
 
 <script setup>
 import { data as posts } from './.vitepress/posts.data'
-const base = '/EndymionBlog'
+const base = ''
 </script>
 
 <div class="hero-wrap">

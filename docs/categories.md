@@ -4,7 +4,7 @@ title: 分类
 <script setup>
 import { ref } from 'vue'
 import { data as posts } from './.vitepress/posts.data'
-const base = '/EndymionBlog'
+const base = ''
 
 const categories = {}
 for (const post of posts) {
