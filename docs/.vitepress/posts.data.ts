@@ -1,5 +1,15 @@
 import { createContentLoader } from 'vitepress'
 
+function fmtDate(val: unknown): string {
+  if (!val) return ''
+  const d = new Date(val as string)
+  if (isNaN(d.getTime())) return String(val)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export default createContentLoader('**/*.md', {
   transform(raw) {
     return raw
@@ -9,7 +19,7 @@ export default createContentLoader('**/*.md', {
         url: p.url,
         frontmatter: {
           title: p.frontmatter.title || '',
-          date: p.frontmatter.date ? String(p.frontmatter.date).slice(0, 10) : '',
+          date: fmtDate(p.frontmatter.date),
         },
       }))
       .sort((a, b) => {
