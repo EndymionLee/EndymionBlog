@@ -28,6 +28,66 @@ SDK 已包含在主包中，无需单独安装其他依赖。
 
 ---
 
+## 应用层干的活
+
+应用层做的是 Pi **不**做的事：
+
+| Pi 做的    | 应用层做的                     |
+| ---------- | ------------------------------ |
+| 调 LLM     | 决定**为什么**调、什么时候调   |
+| 执行工具   | 决定工具**做什么**（业务逻辑） |
+| 存对话历史 | 存**用户数据**、积分、订单     |
+| 上下文压缩 | 做 RAG 检索、知识库查询        |
+| 事件通知   | 渲染 UI、推送通知、发邮件      |
+| Agent 循环 | 编排**多个** Agent 的工作流    |
+
+具体来说，应用可以：
+
+**1. 决定往上下文里塞什么**
+
+```typescript
+// 应用层：查数据库、查向量库、拼 prompt
+const docs = await vectorStore.search(query);
+const user = await db.getUser(id);
+
+// 然后才调 Pi
+session.prompt(`${docs}\n\n---\n\n${query}`);
+```
+
+**2. 提供业务工具**
+
+```typescript
+// Pi 管"执行工具"，管"工具做了什么"
+const searchTool = defineTool({
+  name: "search_docs",
+  execute: () => yourSearchAPI(query),  // 业务逻辑
+});
+```
+
+**3. 监听事件做自己的事**
+
+```typescript
+session.subscribe((event) => {
+  if (event.type === "agent_settled") {
+    // 应用层：记日志、通知用户、触发下一步
+    yourNotificationService.send("对话完成");
+    yourWorkflowEngine.triggerNextStep();
+  }
+});
+```
+
+**4. 编排业务流程**
+
+```typescript
+// 应用层决定"让 Agent 做什么"
+const plan = await planningAgent.prompt("分析需求");
+const code = await codingAgent.prompt(`按计划实现: ${plan}`);
+const review = await reviewAgent.prompt(`审查代码: ${code}`);
+// 控制流程，Pi 只负责每个 Agent 的循环
+```
+
+
+
 ## 快速入门
 
 使用 SDK 的基本流程是：初始化认证存储和模型注册表，调用 `createAgentSession()` 创建会话，订阅事件监听输出，然后调用 `session.prompt()` 发送提示。
@@ -500,6 +560,15 @@ const myExt: InlineExtension = {
 
 ### Skills
 
+#### 方法一
+
+创建:  .pi/skills/skillname/xxx.md     					← 放 Markdown 文件
+加载:  自动                   						   ← Pi 启动时自动扫描
+使用:   Agent 自己决定什么时候读      ← 不需要手动触发
+维护:   直接改 .md 文件                        ← 改完重启或 reload
+
+#### 方法二
+
 通过 `Skill` 接口定义，使用 `skillsOverride` 选项添加：
 
 ```typescript
@@ -521,26 +590,195 @@ const loader = new DefaultResourceLoader({
 await loader.reload();
 ```
 
-### 斜杠命令
 
-通过 `PromptTemplate` 接口定义，使用 `promptsOverride` 添加：
+
+两种方式都行，适用场景不同：
+
+| 方式                      | 适用场景                          |
+| ------------------------- | --------------------------------- |
+| `.pi/skills/*.md` 文件    | 项目规范、团队约定、固定知识      |
+| `skillsOverride` 代码注入 | 动态内容、从数据库/API 生成的技能 |
+
+**文件方式**——最简单的，放个 Markdown 文件就行：
+
+```
+.pi/skills/skillname/project-rules.md    ← 自动发现
+```
+
+**代码方式**（手册里的）——需要编程控制时用，比如技能内容来自数据库：
 
 ```typescript
-const deployCmd: PromptTemplate = {
-  name: "deploy",
-  description: "部署应用",
-  source: "(custom)",
-  content: "# 部署\n\n1. 构建\n2. 测试\n3. 部署",
+// 从数据库读取技能内容，动态注入
+const dbSkills = await db.getSkillsForProject(projectId);
+const virtualSkill = {
+  name: "db-skill",
+  description: "动态加载的项目规范",
+  filePath: "/virtual/db-skill.md",
+  baseDir: "/virtual",
 };
 
 const loader = new DefaultResourceLoader({
-  promptsOverride: (current) => ({
-    prompts: [...current.prompts, deployCmd],
+  skillsOverride: (current) => ({
+    skills: [...current.skills, ...dbSkills, virtualSkill],
     diagnostics: current.diagnostics,
   }),
 });
+// 到这一步，loader 只知道"有个 skillsOverride 规则"
+// 但还没扫磁盘，当前技能列表还是空的
+
 await loader.reload();
+// ↑ 这才真正去扫 .pi/skills/、调用 skillsOverride、合并最终列表
 ```
+
+日常用的话，**文件方式就够了**。`.pi/skills/*.md` 丢进去，Pi 自动发现，不用写任何代码。
+
+```
+const loader = new DefaultResourceLoader({ cwd: process.cwd(), agentDir: getAgentDir() });
+// 忘了 reload——技能、扩展全空
+const { session } = await createAgentSession({ resourceLoader: loader });
+
+// 应该，先 reload
+await loader.reload();
+const { session } = await createAgentSession({ resourceLoader: loader });
+
+```
+
+**注意**：
+
+```
+.pi/skills/
+├── SKILL.md              ← 放在根目录 → 子目录全部被屏蔽
+│
+├── father-daughter/
+│   └── SKILL.md          ← 想加载这个？根目录不能有 SKILL.md
+│
+└── project-intro/
+    └── SKILL.md
+```
+
+这是 `loadSkillsFromDirInternal` 的设计决定的——第一个循环只在根目录找 `SKILL.md`，找到就直接返回，不往下递归。
+
+正确的 Skill 结构应该是**只用子目录方式**：
+
+```
+.pi/skills/
+├── project-intro/SKILL.md
+├── father-daughter/SKILL.md
+├── code-review/SKILL.md
+└── git-helper/SKILL.md
+```
+
+根目录不留 `SKILL.md`。不然就会挡住所有子目录里的 Skill。
+
+
+
+### 斜杠命令
+
+#### 方法一：通过 Extension 注册 Slash Command（推荐）
+
+Pi 的命令系统本质上是 Extension 提供的。
+
+例如：
+
+```
+/my-agent/
+└── extension.ts
+```
+
+注册一个命令：
+
+```
+import { defineExtension } from "@pi/agent-sdk";
+
+export default defineExtension({
+  commands: [
+    {
+      name: "hello",
+      description: "Say hello",
+
+      async execute(ctx) {
+        ctx.ui.info("Hello World!");
+      },
+    },
+  ],
+});
+```
+
+运行以后：
+
+```
+/hello
+```
+
+就会执行对应逻辑。
+
+这种方式适合：
+
+- `/review`
+- `/summarize`
+- `/commit`
+- `/publish`
+- `/novel`
+- `/research`
+
+#### 方法二：SDK 拦截输入
+
+如果你是自己基于 SDK 写应用，可以在收到用户输入时：
+
+```
+用户输入
+↓
+判断是不是 /
+↓
+自己处理
+↓
+否则
+session.prompt()
+```
+
+例如：
+
+```
+if (input.startsWith("/review")) {
+    await review();
+    return;
+}
+
+await session.prompt(input);
+```
+
+很多 Agent 应用（包括 Chat 客户端）都是这么做的。
+
+#### 方法三：Extension Command Context
+
+Pi 的 Extension 提供了 Command Context，可以：
+
+- 注册命令
+- 动态启用/禁用
+- 获取 Session
+- 获取当前工作目录
+- 调用 AgentSession API
+
+例如命令里可以直接：
+
+```
+/retry
+↓
+session.retry()
+-------------------
+/compact
+
+↓
+session.compact()
+-------------------
+/model
+↓
+session.setModel(...)
+```
+
+你之前分析的 `AgentSession` 里面那些公开方法，就是 Slash Command 最常调用的接口。
+
+
 
 ### 上下文文件
 
