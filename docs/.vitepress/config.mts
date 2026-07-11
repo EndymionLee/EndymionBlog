@@ -9,7 +9,7 @@ export default defineConfig({
   cleanUrls: true,
 
   head: [
-    ['link', { rel: 'icon', href: '/favicon.svg' }],
+    ['link', { rel: 'icon', href: '/images/avatar.jpg' }],
     ['meta', { name: 'author', content: 'Endymion' }],
     ['style', {}, `
       body {
@@ -44,7 +44,7 @@ export default defineConfig({
   ],
 
   themeConfig: {
-    logo: { src: '/favicon.svg', width: 24, height: 24 },
+    logo: { src: '/images/avatar.jpg', width: 24, height: 24 },
     siteTitle: 'Endymion',
 
     nav: [
