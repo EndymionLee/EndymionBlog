@@ -17,6 +17,30 @@ export default defineConfig({
         -moz-osx-font-smoothing: grayscale;
       }
     `],
+    ['script', {}, `
+(function() {
+  function init() {
+    var aside = document.querySelector('.VPDocAsideOutline')
+    if (!aside) { setTimeout(init, 500); return }
+    var title = aside.querySelector('.outline-title')
+    if (!title) return
+    title.style.cursor = 'pointer'
+    title.title = '点击切换目录'
+    title.addEventListener('click', function() {
+      var content = aside.querySelector('.VPDocOutlineItem')
+      if (!content) return
+      var hidden = content.style.display === 'none'
+      content.style.display = hidden ? '' : 'none'
+      title.classList.toggle('collapsed', !hidden)
+    })
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init)
+  } else {
+    init()
+  }
+})()
+    `],
   ],
 
   themeConfig: {
@@ -63,6 +87,7 @@ export default defineConfig({
 
     outline: {
       label: '目录',
+      level: 'deep',
     },
   },
 })

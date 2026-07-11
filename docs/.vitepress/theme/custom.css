@@ -50,6 +50,70 @@ body {
   background: rgba(0, 0, 0, 0.25);
 }
 
+/* ========== 文章内容中文两端对齐 ========== */
+.vp-doc p, .vp-doc li {
+  text-align: justify;
+}
+
+/* ========== 正文居中 ========== */
+@media (min-width: 960px) {
+  .VPDoc .aside {
+    display: none !important;
+  }
+  .VPDoc .content-container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  /* 桌面版显示顶部目录下拉 */
+  .VPLocalNav {
+    display: flex !important;
+  }
+}
+
+/* ========== 目录左侧悬浮，不阻挡正文 ========== */
+.VPLocalNavOutlineDropdown .menu {
+  position: fixed !important;
+  left: 24px !important;
+  top: 80px !important;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  width: 220px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+  z-index: 100;
+  padding: 8px 0;
+}
+.VPLocalNavOutlineDropdown .menu .outline-link {
+  padding: 5px 16px;
+  font-size: 0.85rem;
+  display: block;
+  text-decoration: none;
+  color: var(--vp-c-text-2);
+}
+.VPLocalNavOutlineDropdown .menu .outline-link:hover {
+  color: var(--vp-c-brand-1);
+}
+
+/* ========== 目录折叠 ========== */
+.outline-title {
+  cursor: pointer;
+  user-select: none;
+}
+.outline-title::after {
+  content: ' ─';
+  opacity: 0.3;
+  transition: opacity .2s;
+}
+.outline-title.collapsed::after {
+  content: ' +';
+  opacity: 0.6;
+}
+.outline-title:hover::after {
+  opacity: 0.8;
+}
+
 /* ========== 底部 ========== */
 .VPFooter {
   border-top: 1px solid rgba(0, 0, 0, 0.06);
