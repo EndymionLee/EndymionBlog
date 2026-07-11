@@ -3,6 +3,393 @@ title: Pi-Extension
 date: 2026-07-10
 ---
 
+
+
+# Pi Extension 开发
+
+> 来源：https://pi.dev/docs/latest/extensions
+
+---
+
+## 什么是 Extension
+
+Extension 是 TypeScript 模块，运行在 Pi 的扩展系统中。它不需要编译，直接写 `.ts` 文件放到指定目录即可。
+
+Extension 可以做的事情：
+
+- 注册自定义工具给 LLM 调用
+- 监听生命周期事件（拦截工具调用、修改上下文、定制压缩等）
+- 添加自定义命令（如 `/mycommand`）
+- 与用户交互（选择框、确认框、输入框、通知）
+- 注册快捷键和 CLI 参数
+- 动态注册 LLM 提供商
+
+---
+
+## 快速开始
+
+创建一个 `.ts` 文件（比如放在 `~/.pi/agent/extensions/` 或项目 `.pi/extensions/` 下）：
+
+```typescript
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
+
+export default function (pi: ExtensionAPI) {
+  // 1. 监听事件
+  pi.on("session_start", async (_event, ctx) => {
+    ctx.ui.notify("扩展已加载！", "info");
+  });
+
+  // 2. 注册工具
+  pi.registerTool({
+    name: "greet",
+    label: "问候",
+    description: "向某人打招呼",
+    parameters: Type.Object({
+      name: Type.String({ description: "名字" }),
+    }),
+    async execute(toolCallId, params, signal, onUpdate, ctx) {
+      return {
+        content: [{ type: "text", text: `你好，${params.name}！` }],
+        details: {},
+      };
+    },
+  });
+
+  // 3. 注册命令
+  pi.registerCommand("hello", {
+    description: "打招呼",
+    handler: async (args, ctx) => {
+      ctx.ui.notify(`你好 ${args || "世界"}！`, "info");
+    },
+  });
+}
+```
+
+测试运行：`pi -e ./my-extension.ts`
+
+---
+
+## 存放位置
+
+| 位置                                | 作用范围           | 自动发现           |
+| ----------------------------------- | ------------------ | ------------------ |
+| `~/.pi/agent/extensions/*.ts`       | 全局（所有项目）   | 是                 |
+| `~/.pi/agent/extensions/*/index.ts` | 全局（子目录）     | 是                 |
+| `.pi/extensions/*.ts`               | 项目本地           | 是（项目受信任后） |
+| `.pi/extensions/*/index.ts`         | 项目本地（子目录） | 是                 |
+
+也支持通过 `settings.json` 添加 npm 包或 git 仓库源：
+
+```json
+{
+  "packages": ["npm:@foo/bar@1.0.0"],
+  "extensions": ["/path/to/extension.ts"]
+}
+```
+
+---
+
+## 事件系统
+
+Extension 最强大的能力是**监听和干预 Pi 的每个环节**。
+
+### 完整事件流
+
+```
+pi 启动
+  │
+  ├─► session_start
+  ├─► resources_discover
+  │
+  ▼
+用户发送 prompt
+  │
+  ├─► input — 拦截/转换用户输入
+  ├─► before_agent_start — 注入消息、修改系统提示
+  ├─► agent_start / agent_end
+  ├─► message_start / message_update / message_end
+  │
+  │   LLM 可能调工具：
+  │     ├─► tool_call — 可阻止执行
+  │     ├─► tool_execution_start/update/end
+  │     ├─► tool_result — 可修改结果
+  │
+  └─► agent_settled — 完全完成
+```
+
+### 常用事件
+
+**拦截危险命令：**
+
+```typescript
+pi.on("tool_call", async (event, ctx) => {
+  if (event.toolName === "bash" && event.input.command.includes("rm -rf")) {
+    const ok = await ctx.ui.confirm("危险操作！", "允许吗？");
+    if (!ok) return { block: true, reason: "用户拒绝" };
+  }
+});
+```
+
+**修改用户输入：**
+
+```typescript
+pi.on("input", async (event, ctx) => {
+  if (event.text === "ping") {
+    ctx.ui.notify("pong", "info");
+    return { action: "handled" };  // 不发给 LLM
+  }
+  return { action: "continue" };
+});
+```
+
+**注入额外上下文：**
+
+```typescript
+pi.on("before_agent_start", async (event, ctx) => {
+  return {
+    message: {
+      customType: "my-ext",
+      content: "额外的上下文信息",
+      display: true,
+    },
+  };
+});
+```
+
+**修改工具执行结果：**
+
+```typescript
+pi.on("tool_result", async (event, ctx) => {
+  // 在工具结果发给 LLM 之前修改它
+  return { content: [...], details: {...}, isError: false };
+});
+```
+
+---
+
+## ExtensionContext
+
+所有事件处理器都会收到 `ctx: ExtensionContext`，提供这些能力：
+
+**用户交互：**
+
+```typescript
+ctx.ui.select("选择", ["选项1", "选项2"])       // 选择器
+ctx.ui.confirm("标题", "确定吗？")                // 确认框
+ctx.ui.input("标题", "占位符")                    // 输入框
+ctx.ui.notify("消息", "info")                     // 通知
+ctx.ui.editor("标题", "预填文本")                 // 多行编辑器
+ctx.ui.setStatus("key", "文本")                   // 设置状态栏
+ctx.ui.setWidget("key", ["行1", "行2"])           // 编辑区上方显示
+```
+
+**运行信息：**
+
+```typescript
+ctx.mode        // "tui" | "rpc" | "print"
+ctx.hasUI       // 是否有交互界面
+ctx.cwd         // 当前工作目录
+```
+
+**会话控制：**
+
+```typescript
+ctx.isIdle()               // Agent 是否空闲
+ctx.abort()                // 中止
+ctx.shutdown()             // 请求关机
+ctx.compact({...})         // 触发压缩
+ctx.getSystemPrompt()      // 获取当前系统提示
+```
+
+---
+
+## 注册工具
+
+```typescript
+pi.registerTool({
+  name: "my_tool",
+  label: "我的工具",
+  description: "这个工具做什么（LLM 看到这段描述来决定是否调用）",
+  parameters: Type.Object({
+    input: Type.String({ description: "输入值" }),
+  }),
+  async execute(toolCallId, params, signal, onUpdate, ctx) {
+    return {
+      content: [{ type: "text", text: `结果: ${params.input}` }],
+      details: {},
+    };
+  },
+});
+```
+
+- 工具可以随时注册（不限于扩展工厂函数），注册后立即可用
+- 可以和内置工具同名来覆盖它（如 `name: "bash"`）
+- 修改文件的工具建议使用 `withFileMutationQueue()` 共享文件锁
+- `execute` 中 throw error → 标记为失败；正常 return → 标记为成功
+
+---
+
+## 注册命令
+
+```typescript
+pi.registerCommand("deploy", {
+  description: "部署到环境",
+  getArgumentCompletions: (prefix) => {
+    return ["dev", "staging", "prod"]
+      .filter(e => e.startsWith(prefix))
+      .map(e => ({ value: e, label: e }));
+  },
+  handler: async (args, ctx) => {
+    ctx.ui.notify(`部署到: ${args}`, "info");
+  },
+});
+```
+
+---
+
+## 注册快捷键
+
+```typescript
+pi.registerShortcut("ctrl+shift+p", {
+  description: "切换模式",
+  handler: async (ctx) => { ctx.ui.notify("已切换！"); },
+});
+```
+
+---
+
+## 注册 CLI 参数
+
+```typescript
+pi.registerFlag("plan", {
+  description: "以计划模式启动",
+  type: "boolean",
+  default: false,
+});
+
+if (pi.getFlag("plan")) {
+  // 计划模式
+}
+```
+
+---
+
+## 持久化与恢复
+
+**存储自定义数据（不发给 LLM）：**
+
+```typescript
+pi.appendEntry("my-state", { count: 42 });
+
+// 恢复
+pi.on("session_start", async (_event, ctx) => {
+  for (const entry of ctx.sessionManager.getEntries()) {
+    if (entry.type === "custom" && entry.customType === "my-state") {
+      // 从 entry.data 恢复状态
+    }
+  }
+});
+```
+
+**发送自定义消息（会发给 LLM）：**
+
+```typescript
+pi.sendMessage({
+  customType: "my-ext",
+  content: "上下文消息",
+  display: true,
+}, { triggerTurn: true, deliverAs: "steer" });
+```
+
+---
+
+## 跨扩展通信
+
+```typescript
+// 扩展 A 发送
+pi.events.emit("my:event", { data: 123 });
+
+// 扩展 B 接收
+pi.events.on("my:event", (data) => { console.log(data); });
+```
+
+---
+
+## 注册 Provider
+
+```typescript
+pi.registerProvider("local-model", {
+  baseUrl: "http://localhost:1234/v1",
+  apiKey: "$LOCAL_API_KEY",
+  api: "openai-completions",
+  models: [{
+    id: "my-model", name: "My Model",
+    input: ["text"],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 128000, maxTokens: 4096,
+  }],
+});
+```
+
+---
+
+## PiExample 实战
+
+在项目 `.pi/extensions/` 下创建一个日志扩展：
+
+```typescript
+// .pi/extensions/logger.ts
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { appendFileSync, mkdirSync, existsSync } from "node:fs";
+import { join } from "node:path";
+
+export default function (pi: ExtensionAPI) {
+  const logDir = join(process.cwd(), ".logs");
+  if (!existsSync(logDir)) mkdirSync(logDir, { recursive: true });
+
+  pi.on("message_end", async (event) => {
+    if (event.message.role === "user") {
+      const text = extractText(event.message);
+      if (text) {
+        const ts = new Date().toISOString().slice(0, 10);
+        appendFileSync(join(logDir, `${ts}.log`),
+          `[${new Date().toLocaleTimeString()}] 用户: ${text}\n`, "utf-8");
+      }
+    }
+  });
+
+  pi.registerCommand("logs", {
+    description: "查看今日日志",
+    handler: async (_args, ctx) => {
+      ctx.ui.notify(`日志目录: ${logDir}`, "info");
+    },
+  });
+}
+
+function extractText(msg: any): string | null {
+  if (!msg.content) return null;
+  if (typeof msg.content === "string") return msg.content;
+  const texts = msg.content.filter((c: any) => c.type === "text").map((c: any) => c.text);
+  return texts.length > 0 ? texts.join("") : null;
+}
+```
+
+放到 `.pi/extensions/logger.ts` 后，Pi 会自动加载它。每次用户说话，都会被记录到 `.logs/` 目录下的文件中。
+
+---
+
+## 注意事项
+
+1. **不要从工厂函数启动后台资源**（进程、socket、文件监听器等），应推迟到 `session_start` 或命令/工具/事件中启动
+2. **Extension 有完整的系统权限**，只安装可信来源的扩展
+3. **cmd 模式**下 `ctx.hasUI` 为 `false`，对话框方法会抛异常，需要先检查
+4. **事件处理器的返回值**决定是否覆盖默认行为（如 `tool_call` 返回 `{ block: true }` 阻止执行）
+5. **修改文件的工具**应使用 `withFileMutationQueue()` 确保和内置工具共享文件锁
+6. **State 管理**建议存在 tool result 的 `details` 中，这样才能正确支持分支
+
+
+
 ## 一、Pi Extension 介绍
 
 Extension 是：
