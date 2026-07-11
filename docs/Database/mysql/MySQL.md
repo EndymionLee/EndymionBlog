@@ -5,7 +5,7 @@ tags:
   - database
   - sql
   - sqlalchemy
-date: 2026-06-19
+date: 2025-06-19
 ---
 # MySQL 教程
 

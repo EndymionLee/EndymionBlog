@@ -4,7 +4,7 @@ tags:
   - redis
   - database
   - cache
-date: 2026-06-19
+date: 2025-06-19
 ---
 # Redis 教程
 

@@ -5,7 +5,7 @@ tags:
   - sql
   - database
   - fastapi
-date: 2026-06-19
+date: 2025-06-19
 ---
 # PostgreSQL 教程
 

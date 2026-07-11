@@ -6,7 +6,7 @@ tags:
   - sql
   - python
   - fastapi
-date: 2026-06-19
+date: 2025-06-19
 ---
 # SQLite 教程
 
