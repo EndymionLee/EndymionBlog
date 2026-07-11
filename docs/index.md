@@ -18,7 +18,7 @@ function next() { if (page.value < totalPages.value) page.value++ }
     <h1 class="hero-name">Endymion</h1>
     <p class="hero-tagline">记录学习、项目开发与技术实践</p>
   </div>
-  <img :src="base + '/images/avatar.jpg'" class="hero-avatar" />
+  <a href="/about"><img :src="base + '/images/avatar.jpg'" class="hero-avatar" /></a>
 </div>
 
 <div class="section">

@@ -1,5 +1,5 @@
 ---
-title: PostgreSQL 教程
+title: PostgreSQL 笔记
 tags:
   - postgresql
   - sql
@@ -59,6 +59,7 @@ pgAdmin → 官方图形界面   DBeaver → 通用数据库工具（推荐）
 ```
 
 ---
+
 ## 二、SQL 基础
 
 ### CREATE
@@ -132,23 +133,24 @@ SELECT * FROM users WHERE email IS NOT NULL;
 ```
 
 ---
+
 ## 三、表设计与数据类型
 
 ### 常用数据类型
 
-| 类型 | 说明 | 示例 |
-|------|------|------|
-| `INTEGER` | 整数 | `age INT` |
-| `SERIAL` | 自增整数（主键用） | `id SERIAL PRIMARY KEY` |
-| `BIGSERIAL` | 自增长整数（数据量大时） | `id BIGSERIAL PRIMARY KEY` |
-| `VARCHAR(n)` | 变长字符串 | `name VARCHAR(100)` |
-| `TEXT` | 不限长度字符串 | `content TEXT` |
-| `BOOLEAN` | 布尔值 | `is_active BOOLEAN DEFAULT true` |
-| `NUMERIC(p,s)` | 精确小数（金额用） | `price NUMERIC(10,2)` |
-| `REAL` | 浮点数 | `rating REAL` |
-| `DATE` | 日期 | `birthday DATE` |
-| `TIMESTAMP` | 日期时间 | `created_at TIMESTAMP DEFAULT NOW()` |
-| `JSONB` | JSON 数据（可查询） | `metadata JSONB` |
+| 类型             | 说明                     | 示例                                   |
+| ---------------- | ------------------------ | -------------------------------------- |
+| `INTEGER`      | 整数                     | `age INT`                            |
+| `SERIAL`       | 自增整数（主键用）       | `id SERIAL PRIMARY KEY`              |
+| `BIGSERIAL`    | 自增长整数（数据量大时） | `id BIGSERIAL PRIMARY KEY`           |
+| `VARCHAR(n)`   | 变长字符串               | `name VARCHAR(100)`                  |
+| `TEXT`         | 不限长度字符串           | `content TEXT`                       |
+| `BOOLEAN`      | 布尔值                   | `is_active BOOLEAN DEFAULT true`     |
+| `NUMERIC(p,s)` | 精确小数（金额用）       | `price NUMERIC(10,2)`                |
+| `REAL`         | 浮点数                   | `rating REAL`                        |
+| `DATE`         | 日期                     | `birthday DATE`                      |
+| `TIMESTAMP`    | 日期时间                 | `created_at TIMESTAMP DEFAULT NOW()` |
+| `JSONB`        | JSON 数据（可查询）      | `metadata JSONB`                     |
 
 ### 字段约束
 
@@ -186,6 +188,7 @@ ALTER TABLE users RENAME TO members;
 ```
 
 ---
+
 ## 四、关联查询
 
 ### 外键
@@ -217,10 +220,10 @@ FROM orders o
 JOIN users u ON o.user_id = u.id;
 ```
 
-| JOIN 类型 | 结果 |
-|-----------|------|
-| `INNER JOIN` | 只返回两表都匹配的数据 |
-| `LEFT JOIN` | 左表全返回，右表没有的显示 NULL |
+| JOIN 类型      | 结果                            |
+| -------------- | ------------------------------- |
+| `INNER JOIN` | 只返回两表都匹配的数据          |
+| `LEFT JOIN`  | 左表全返回，右表没有的显示 NULL |
 | `RIGHT JOIN` | 右表全返回，左表没有的显示 NULL |
 
 ```sql
@@ -246,6 +249,7 @@ ORDER BY total DESC;
 ```
 
 ---
+
 ## 五、索引与性能
 
 ### 创建索引
@@ -288,6 +292,7 @@ ORDER BY duration DESC;
 ```
 
 ---
+
 ## 六、高级功能
 
 ### JSON 字段
@@ -347,6 +352,7 @@ COMMIT;  -- 或 ROLLBACK
 ```
 
 ---
+
 ## 七、FastAPI 集成
 
 ### 安装

@@ -1,5 +1,5 @@
 ---
-title: SQLite 教程
+title: SQLite 笔记
 tags:
   - sqlite
   - database
@@ -8,7 +8,6 @@ tags:
   - fastapi
 date: 2026-06-19
 ---
-
 # SQLite 教程
 
 ## 一、认识 SQLite
@@ -430,5 +429,3 @@ ORM 代码完全一样，只需要改一行 DATABASE_URL
     本地：DATABASE_URL=sqlite:///./app.db
     线上：DATABASE_URL=postgresql://...
 ```
-
-

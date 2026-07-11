@@ -1,5 +1,5 @@
 ---
-title: MySQL 教程
+title: MySQL 笔记
 tags:
   - mysql
   - database
@@ -7,7 +7,6 @@ tags:
   - sqlalchemy
 date: 2026-06-19
 ---
-
 # MySQL 教程
 
 ## 一、认识 MySQL
@@ -65,14 +64,14 @@ SHOW INDEX FROM users;       # 查看索引
 
 ### 和 PostgreSQL 的核心差异
 
-| 特性 | MySQL | PostgreSQL |
-|------|-------|-----------|
-| 自增 | `AUTO_INCREMENT` | `SERIAL` |
-| 字符串 | `VARCHAR` | `VARCHAR` / `TEXT` |
-| JSON | `JSON`（5.7+） | `JSONB`（功能更强） |
-| 事务 | InnoDB 引擎支持 | 默认支持 |
-| 索引 | B-Tree | B-Tree + GIN + GiST |
-| 连接串 | `mysql://` | `postgresql://` |
+| 特性   | MySQL              | PostgreSQL             |
+| ------ | ------------------ | ---------------------- |
+| 自增   | `AUTO_INCREMENT` | `SERIAL`             |
+| 字符串 | `VARCHAR`        | `VARCHAR` / `TEXT` |
+| JSON   | `JSON`（5.7+）   | `JSONB`（功能更强）  |
+| 事务   | InnoDB 引擎支持    | 默认支持               |
+| 索引   | B-Tree             | B-Tree + GIN + GiST    |
+| 连接串 | `mysql://`       | `postgresql://`      |
 
 ### 练习
 
@@ -151,20 +150,20 @@ DELETE FROM users WHERE id = 1;
 
 ### 常用数据类型
 
-| 类型 | 说明 | 示例 |
-|------|------|------|
-| `INT` | 整数 | `age INT` |
-| `BIGINT` | 大整数 | `user_id BIGINT` |
-| `INT AUTO_INCREMENT` | 自增主键 | `id INT AUTO_INCREMENT PRIMARY KEY` |
-| `VARCHAR(n)` | 变长字符串 | `name VARCHAR(100)` |
-| `TEXT` | 长文本 | `content TEXT` |
-| `DECIMAL(p,s)` | 精确小数 | `price DECIMAL(10,2)` |
-| `FLOAT / DOUBLE` | 浮点数 | `rating FLOAT` |
-| `BOOLEAN` | 布尔值（实际是 TINYINT） | `is_active BOOLEAN` |
-| `DATE` | 日期 | `birthday DATE` |
-| `DATETIME` | 日期时间 | `created_at DATETIME` |
-| `TIMESTAMP` | 时间戳（有时区） | `updated_at TIMESTAMP` |
-| `JSON` | JSON 数据（5.7+） | `metadata JSON` |
+| 类型                   | 说明                     | 示例                                  |
+| ---------------------- | ------------------------ | ------------------------------------- |
+| `INT`                | 整数                     | `age INT`                           |
+| `BIGINT`             | 大整数                   | `user_id BIGINT`                    |
+| `INT AUTO_INCREMENT` | 自增主键                 | `id INT AUTO_INCREMENT PRIMARY KEY` |
+| `VARCHAR(n)`         | 变长字符串               | `name VARCHAR(100)`                 |
+| `TEXT`               | 长文本                   | `content TEXT`                      |
+| `DECIMAL(p,s)`       | 精确小数                 | `price DECIMAL(10,2)`               |
+| `FLOAT / DOUBLE`     | 浮点数                   | `rating FLOAT`                      |
+| `BOOLEAN`            | 布尔值（实际是 TINYINT） | `is_active BOOLEAN`                 |
+| `DATE`               | 日期                     | `birthday DATE`                     |
+| `DATETIME`           | 日期时间                 | `created_at DATETIME`               |
+| `TIMESTAMP`          | 时间戳（有时区）         | `updated_at TIMESTAMP`              |
+| `JSON`               | JSON 数据（5.7+）        | `metadata JSON`                     |
 
 ### 建表规范
 
@@ -474,5 +473,3 @@ DATABASE_URL = "mysql://user:pass@localhost:3306/myapp?charset=utf8mb4"
 
 # ORM 代码一行都不用改
 ```
-
-

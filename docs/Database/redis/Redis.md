@@ -1,12 +1,11 @@
 ---
-title: Redis 教程
+title: Redis 笔记
 tags:
   - redis
   - database
   - cache
 date: 2026-06-19
 ---
-
 # Redis 教程
 
 ## 一、认识 Redis
@@ -602,4 +601,3 @@ def worker():
 # 使用
 send_task("send_email", {"to": "user@test.com", "subject": "欢迎"})
 ```
-

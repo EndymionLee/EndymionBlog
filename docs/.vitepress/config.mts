@@ -5,7 +5,7 @@ export default defineConfig({
   title: 'Endymion',
   description: 'Notes on AI, Go and Software Engineering',
   lang: 'zh-CN',
-  lastUpdated: true,
+  lastUpdated: false,
   cleanUrls: true,
 
   head: [
@@ -27,10 +27,12 @@ export default defineConfig({
       { text: '博客', link: '/' },
       { text: '分类', link: '/categories' },
       { text: '项目', link: '/projects' },
+      { text: '关于', link: '/about' },
     ],
 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/EndymionLee' },
+      { icon: 'telegram', link: 'https://t.me/EndymionLee' },
     ],
 
     footer: {
