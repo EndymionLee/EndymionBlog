@@ -19,6 +19,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ========== 导航栏 Logo 圆形 ========== */
+.VPNavBarTitle .logo {
+  border-radius: 50% !important;
+  object-fit: cover !important;
+}
+
 /* ========== 导航栏毛玻璃 ========== */
 .VPNav {
   backdrop-filter: saturate(180%) blur(20px) !important;

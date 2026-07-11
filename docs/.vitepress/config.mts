@@ -9,7 +9,7 @@ export default defineConfig({
   cleanUrls: true,
 
   head: [
-    ['link', { rel: 'icon', href: '/images/avatar.jpg' }],
+    ['link', { rel: 'icon', href: '/favicon.svg' }],
     ['meta', { name: 'author', content: 'Endymion' }],
     ['style', {}, `
       body {
