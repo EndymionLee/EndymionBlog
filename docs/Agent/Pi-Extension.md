@@ -2,9 +2,6 @@
 title: Pi-Extension
 date: 2026-07-10
 ---
-
-
-
 # Pi Extension 开发
 
 > 来源：https://pi.dev/docs/latest/extensions
@@ -72,8 +69,8 @@ export default function (pi: ExtensionAPI) {
 
 ## 存放位置
 
-| 位置                                | 作用范围           | 自动发现           |
-| ----------------------------------- | ------------------ | ------------------ |
+| 位置                                  | 作用范围           | 自动发现           |
+| ------------------------------------- | ------------------ | ------------------ |
 | `~/.pi/agent/extensions/*.ts`       | 全局（所有项目）   | 是                 |
 | `~/.pi/agent/extensions/*/index.ts` | 全局（子目录）     | 是                 |
 | `.pi/extensions/*.ts`               | 项目本地           | 是（项目受信任后） |
@@ -379,6 +376,63 @@ function extractText(msg: any): string | null {
 
 ---
 
+## 扩展加载
+
+```typescript
+/**
+ * 演示：通过 SDK 加载多个扩展文件
+ *
+ * 关键点：扩展工厂函数需要 bindExtensions 才会执行。
+ * 不加这步，扩展里的 registerTool()、registerCommand() 都不会生效。
+ */
+
+import { createAgentSession, DefaultResourceLoader, getAgentDir, SessionManager } from "@earendil-works/pi-coding-agent";
+
+async function main() {
+  const loader = new DefaultResourceLoader({
+    cwd: process.cwd(),
+    agentDir: getAgentDir(),
+    additionalExtensionPaths: [
+      "extensions/hello.ts",
+      "extensions/guard.ts",
+      "extensions/input-transform.ts",
+      "extensions/context-inject.ts",
+      "extensions/memo.ts",
+    ],
+  });
+  await loader.reload();
+
+  const { session } = await createAgentSession({
+    resourceLoader: loader,
+    sessionManager: SessionManager.inMemory(),
+  });
+
+  // ★ 这一步最重要：扩展工厂函数在这里才真正执行
+  await session.bindExtensions({});
+
+  console.log("已加载 5 个扩展：hello, guard, input-transform, context-inject, memo\n");
+  console.log("已注册工具:", session.getAllTools().map((t) => t.name).join(", "));
+  console.log("");
+
+  session.subscribe((event) => {
+    if (event.type === "message_update" && event.assistantMessageEvent?.type === "text_delta") {
+      process.stdout.write(event.assistantMessageEvent.delta);
+    }
+  });
+
+  await session.prompt("调用 hello 工具，name=小红，帮我向小红打个招呼");
+  session.dispose();
+}
+
+main().catch(console.error);
+
+
+```
+
+
+
+
+
 ## 注意事项
 
 1. **不要从工厂函数启动后台资源**（进程、socket、文件监听器等），应推迟到 `session_start` 或命令/工具/事件中启动
@@ -387,6 +441,8 @@ function extractText(msg: any): string | null {
 4. **事件处理器的返回值**决定是否覆盖默认行为（如 `tool_call` 返回 `{ block: true }` 阻止执行）
 5. **修改文件的工具**应使用 `withFileMutationQueue()` 确保和内置工具共享文件锁
 6. **State 管理**建议存在 tool result 的 `details` 中，这样才能正确支持分支
+7. Extension 的加载分为两个阶段：**Discovery（发现）**：DefaultResourceLoader 根据 additionalExtensionPaths 或 Package 找到扩展文件。**Binding（绑定）**：调用 session.bindExtensions() 后，Pi 才会执行每个扩展的 export default(pi)，真正注册 Tool、Command、Hook、Provider 等能力。
+
 
 
 
@@ -413,8 +469,6 @@ Pi Runtime
 ```
 
 这些都可以通过 Extension 增加。
-
-
 
 举几个实际例子
 
@@ -490,8 +544,6 @@ Hook
 - Token统计
 - 安全控制
 
-
-
 ### ④ 修改 UI
 
 例如：
@@ -534,8 +586,6 @@ Agent
 
 也完全可以放进 Extension。
 
-
-
 ## 二、为什么要设计 Extension？
 
 因为 Pi 想做到：
@@ -569,8 +619,6 @@ Git Extension
 Runtime 完全不用动。
 
 这就是插件化。
-
-
 
 它其实是在分三层：
 
@@ -608,8 +656,6 @@ Application 提供：
 - Research
 - Browser
 - 商业逻辑
-
-
 
 ## 三、Pi Extension API
 
@@ -649,8 +695,6 @@ code-review-extension/
 └── tsconfig.json
 ```
 
-
-
 ### 第一步：入口
 
 ```
@@ -682,8 +726,6 @@ export default function (pi: ExtensionAPI) {
 ```
 
 整个插件就是一个入口。
-
-
 
 ### 第二步：注册 Tool
 
@@ -767,8 +809,6 @@ code_review
 开始分析
 ```
 
-
-
 ### 第三步：注册 Slash Command
 
 ```
@@ -829,8 +869,6 @@ Security`
 
 直接开始 Review。
 
-
-
 ### 第四步：监听 Hook
 
 ```
@@ -876,8 +914,6 @@ tool_call
 
 全部放这里。
 
-
-
 ### 第五步：Skill
 
 ```
@@ -917,8 +953,6 @@ Review
 
 自动加载 Skill
 ```
-
-
 
 ### 第六步：运行以后发生什么？
 
@@ -985,4 +1019,3 @@ Review
 
              Claude
 ```
-
