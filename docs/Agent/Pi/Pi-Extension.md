@@ -378,6 +378,14 @@ function extractText(msg: any): string | null {
 
 ## 扩展加载
 
+| 方式                               | 扩展文件放哪              | 路径解析基准           |
+| ---------------------------------- | ------------------------- | ---------------------- |
+| 方式一：`additionalExtensionPaths` | 任意位置                  | 项目根目录（cwd）      |
+| 方式二：`.pi/extensions/` 自动发现 | `.pi/extensions/`         | `.pi/extensions/` 目录 |
+| 方式三：`settings.json` 配置       | `.pi/extensions/hello.ts` | **相对于 `.pi/` 目录** |
+
+### 一：additionalExtensionPaths指定扩展文件
+
 ```typescript
 /**
  * 演示：通过 SDK 加载多个扩展文件
@@ -428,6 +436,172 @@ main().catch(console.error);
 
 
 ```
+
+### 方法二：.pi/extensions/ 自动发自动扫描&加载
+
+```
+/**
+ * 演示：自动发现 Extension（方式二）
+ *
+ * 不写 additionalExtensionPaths，让 DefaultResourceLoader
+ * 自动扫描 .pi/extensions/ 目录。
+ */
+
+import { createAgentSession, DefaultResourceLoader, getAgentDir, SessionManager } from "@earendil-works/pi-coding-agent";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const projectRoot = resolve(__dirname, "..");
+
+async function main() {
+  // 不传 additionalExtensionPaths，自动发现 .pi/extensions/
+  const loader = new DefaultResourceLoader({
+    cwd: projectRoot,
+    agentDir: getAgentDir(),
+  });
+  await loader.reload();
+
+  const { session } = await createAgentSession({
+    resourceLoader: loader,
+    sessionManager: SessionManager.inMemory(),
+  });
+
+  // 执行扩展工厂函数
+  await session.bindExtensions({});
+
+  console.log("已注册工具:", session.getAllTools().map((t) => t.name).join(", "));
+  console.log("");
+
+  session.subscribe((event) => {
+    if (event.type === "message_update" && event.assistantMessageEvent?.type === "text_delta") {
+      process.stdout.write(event.assistantMessageEvent.delta);
+    }
+  });
+
+  await session.prompt("调用 hello 工具，name=小红，向小红打招呼");
+  session.dispose();
+}
+
+main().catch(console.error);
+
+```
+
+### 方法三：settings.json 配置
+
+创建.pi\settings.json
+
+| 方式三：`settings.json` 配置 | `.pi/extensions/hello.ts` | **相对于 `.pi/` 目录** |
+| ---------------------------- | ------------------------- | ---------------------- |
+
+```
+{
+  "extensions": [
+    "extensions/hello.ts" //相当于.pi/extensions/hello.ts
+  ]
+}
+```
+
+```typescript
+/**
+ * 演示：settings.json 配置加载（方式三）
+ *
+ * 扩展路径配在 .pi/settings.json 中。
+ * 注意：路径是相对于 .pi/ 目录解析的，不是项目根目录。
+ * 所以 "extensions/hello.ts" = .pi/extensions/hello.ts
+ */
+
+import { createAgentSession, DefaultResourceLoader, getAgentDir, SessionManager, SettingsManager } from "@earendil-works/pi-coding-agent";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const projectRoot = resolve(__dirname, "..");
+
+async function main() {
+  // 创建 SettingsManager，它会从 .pi/settings.json 读取配置
+  const settingsManager = SettingsManager.create(projectRoot);
+
+  const loader = new DefaultResourceLoader({
+    cwd: projectRoot,
+    agentDir: getAgentDir(),
+    settingsManager,  // ← 传入 settingsManager，自动读取 extensions 配置
+  });
+  await loader.reload();
+
+  const { session } = await createAgentSession({
+    resourceLoader: loader,
+    sessionManager: SessionManager.inMemory(),
+  });
+
+  await session.bindExtensions({});
+
+  console.log("已注册工具:", session.getAllTools().map((t) => t.name).join(", "));
+  console.log("");
+
+  session.subscribe((event) => {
+    if (event.type === "message_update" && event.assistantMessageEvent?.type === "text_delta") {
+      process.stdout.write(event.assistantMessageEvent.delta);
+    }
+  });
+
+  await session.prompt("调用 hello 工具，name=小红，向小红打招呼");
+  session.dispose();
+}
+
+main().catch(console.error);
+
+
+```
+
+
+
+### 注意一
+
+全部方法都要 await session.bindExtensions({});
+
+
+
+### 注意二
+
+方式一、二有本质区别：
+
+**方式二（自动发现）：** 扫目录，**全部加载**
+
+```
+.pi/extensions/
+├── hello.ts     ← 自动加载
+├── secret.ts    ← 也自动加载
+└── debug.ts     ← 也自动加载
+```
+
+没法选，放进去就加载。
+
+**方式三（settings.json）：** **精确指定**加载哪些
+
+```json
+{
+  "extensions": [
+    "extensions/hello.ts"     ← 只加载这一个
+  ]
+}
+```
+
+`.pi/extensions/` 下就算有 10 个文件，也只加载 settings 里列出来的。
+
+另外 settings.json 可以指向**任意位置**的文件：
+
+```json
+{
+  "extensions": [
+    "extensions/hello.ts",
+    "C:/shared/team-extension.ts",       ← 绝对路径
+    "../other-project/ext/greeting.ts"   ← 项目外
+  ]
+}
+```
+
+方式二只能扫 `.pi/extensions/` 这一个目录。所以方式三更灵活，方式二更简单。
 
 
 

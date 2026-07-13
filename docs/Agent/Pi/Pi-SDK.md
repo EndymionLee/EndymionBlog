@@ -287,6 +287,139 @@ unsub = session.subscribe(handler); // 重新订阅
 
 ## 事件参考
 
+                           用户
+                             │
+                             ▼
+                     session.prompt()
+                             │
+                             ▼
+                    Queue（消息入队）
+                             │
+                             │
+                 queue_update (SessionEvent)
+                             │
+                             ▼
+────────────────────────────────────────────────────────────
+
+                  Turn（一次完整执行）
+    
+            turn_start (SessionEvent)
+
+────────────────────────────────────────────────────────────
+
+                Agent 开始推理
+    
+          agent_start (SessionEvent)
+    
+                 │
+                 ▼
+      before_agent_start (Extension Hook)
+    
+                 │
+                 ▼
+          生成 Assistant Message
+    
+         message_start (SessionEvent)
+    
+                 │
+                 ▼
+        message_update (SessionEvent)
+    
+                 │
+                 ├───────────────┐
+                 │               │
+                 ▼               ▼
+    
+      thinking_delta         text_delta
+      （思考过程）           （正式回答）
+    
+                 │
+                 ▼
+         message_end (SessionEvent)
+
+────────────────────────────────────────────
+
+      如果模型决定调用 Tool
+    
+                 │
+                 ▼
+    
+        tool_call (Extension Hook)
+         （可拦截、可阻止）
+    
+                 │
+                 ▼
+
+ tool_execution_start (SessionEvent)
+
+                 │
+                 ▼
+
+ tool_execution_update (SessionEvent)
+       （工具流式输出）
+
+                 │
+                 ▼
+
+ tool_execution_end (SessionEvent)
+
+                 │
+                 ▼
+    
+      tool_result (Extension Hook)
+      （可修改 Tool 返回）
+    
+                 │
+                 ▼
+    
+         模型继续生成回答
+
+────────────────────────────────────────────
+
+            agent_end (SessionEvent)
+    
+                 │
+    
+      agent_settled (Extension Hook)
+    
+                 │
+    
+            turn_end (SessionEvent)
+
+────────────────────────────────────────────
+
+      Context 太长？
+    
+                 │
+    
+      compaction_start
+    
+                 │
+    
+      Context Compress
+    
+                 │
+    
+      compaction_end
+
+────────────────────────────────────────────
+
+      LLM 调用失败？
+    
+                 │
+    
+      auto_retry_start
+    
+                 │
+    
+          Retry...
+    
+                 │
+    
+      auto_retry_end
+
+
+
 通过 `session.subscribe()` 接收流式输出和生命周期通知：
 
 ```typescript
@@ -295,9 +428,11 @@ session.subscribe((event) => {
 
     // 流式文本 — 最常用的事件
     case "message_update":
+      // 模型的正式回答
       if (event.assistantMessageEvent.type === "text_delta") {
         process.stdout.write(event.assistantMessageEvent.delta);
       }
+      // 模型的思考过程（Reasoning）
       if (event.assistantMessageEvent.type === "thinking_delta") {
         // 思考过程（启用思考时）
       }

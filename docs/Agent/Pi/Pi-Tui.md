@@ -257,3 +257,82 @@ PI_TUI_WRITE_LOG=1 pi  # 捕获原始 ANSI 流日志
 3. 状态变更后调用 `handle.requestRender()`
 4. 自定义组件返回含 `render`、`invalidate`、`handleInput` 三方法的对象
 5. Overlay 组件关闭后不可复用，每次重新显示需重新调用 `ctx.ui.custom()`
+
+
+
+# TUI使用
+
+```typescript
+/**
+ * InteractiveMode 测试 demo
+ *
+ * 启动完整的 Pi TUI 界面，支持 / 命令和 ctx.ui 交互。
+ * 输入 /ui-test 可看到通知、确认框、选择器等效果。
+ *
+ * 运行：npx tsx demo/tui-mode.ts
+ */
+
+import {
+  type CreateAgentSessionRuntimeFactory,
+  createAgentSessionFromServices,
+  createAgentSessionRuntime,
+  createAgentSessionServices,
+  getAgentDir,
+  InteractiveMode,
+  SessionManager,
+  DefaultResourceLoader,
+  AuthStorage,
+  ModelRegistry,
+} from "@earendil-works/pi-coding-agent";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const projectRoot = resolve(__dirname, "..");
+
+async function main() {
+  // 1. 加载扩展（自动发现 .pi/extensions/）
+  const loader = new DefaultResourceLoader({
+    cwd: projectRoot,
+    agentDir: getAgentDir(),
+    noSkills: true,
+  });
+  await loader.reload();
+
+  // 2. 认证和模型
+  const authStorage = AuthStorage.create();
+  const modelRegistry = ModelRegistry.create(authStorage);
+
+  // 3. 创建运行时工厂
+  const createRuntime: CreateAgentSessionRuntimeFactory = async ({ cwd, sessionManager, sessionStartEvent }) => {
+    const services = await createAgentSessionServices({
+      cwd,
+      authStorage,
+      modelRegistry,
+    });
+    // 替换为自定义 loader（含扩展）
+    (services as any).resourceLoader = loader;
+    const created = await createAgentSessionFromServices({
+      services,
+      sessionManager,
+      sessionStartEvent,
+    });
+    return { ...created, services, diagnostics: services.diagnostics };
+  };
+
+  // 4. 创建运行时
+  const runtime = await createAgentSessionRuntime(createRuntime, {
+    cwd: projectRoot,
+    agentDir: getAgentDir(),
+    sessionManager: SessionManager.create(projectRoot),
+  });
+
+  // 5. 启动 TUI
+  const mode = new InteractiveMode(runtime);
+  await mode.run();
+}
+
+main().catch(console.error);
+
+```
+
