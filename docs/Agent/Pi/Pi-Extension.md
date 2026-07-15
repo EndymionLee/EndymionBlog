@@ -163,7 +163,559 @@ pi.on("tool_result", async (event, ctx) => {
 });
 ```
 
+
+
 ---
+
+
+
+### Extension 事件参考手册
+
+所有事件通过 `pi.on(event, handler)` 订阅。
+
+返回值的意义：有返回值的事件可以**干预 Pi 的默认行为**（如取消操作、修改数据、替换结果）。无返回值的事件是**只读通知**，只能监听不能改变流程。
+
+#### project_trust — 项目信任决策
+
+**触发时机**：Pi 判断是否信任项目时。
+
+**返回值意义**：插件可以代替 Pi 的信任弹窗做决策。
+
+```typescript
+pi.on("project_trust", async (event, ctx) => {
+  // event.cwd — 项目路径
+  return { trusted: "yes" as const, remember: true };
+});
+```
+
+| 返回值字段 | 类型              | 说明                     |
+| ---------- | ----------------- | ------------------------ |
+| `trusted`  | `"yes"            | "no"                     |
+| `remember` | `boolean`（可选） | 记住此选择，下次不再弹窗 |
+
+#### resources_discover — 资源路径发现
+
+**触发时机**：会话启动后，Pi 收集扩展、技能、提示模板等资源时。
+
+**返回值意义**：插件可以贡献自己的资源路径，让 Pi 加载。
+
+```typescript
+pi.on("resources_discover", async (event, ctx) => {
+  // event.reason — "startup" | "reload"
+  return {
+    skillPaths: ["/path/to/skills"],
+    promptPaths: ["/path/to/prompts"],
+    themePaths: ["/path/to/themes"],
+  };
+});
+```
+
+| 返回值字段    | 类型               | 说明         |
+| ------------- | ------------------ | ------------ |
+| `skillPaths`  | `string[]`（可选） | 技能文件路径 |
+| `promptPaths` | `string[]`（可选） | 提示模板路径 |
+| `themePaths`  | `string[]`（可选） | 主题文件路径 |
+
+#### session_start — 会话启动通知
+
+**触发时机**：会话启动、恢复或重载时。
+
+**返回值意义**：无。只能监听不能干预。
+
+`event.reason` 取值：`"startup"`（首次启动）、`"reload"`（/reload 后）、`"new"`（/new 后）、`"resume"`（切换会话后）、`"fork"`（分支后）
+
+```typescript
+pi.on("session_start", async (event, ctx) => {
+  console.log("会话启动，原因:", event.reason);
+  ctx.ui.notify("扩展已加载！", "info");
+});
+```
+
+#### session_info_changed — 会话名称变更
+
+**触发时机**：用户用 `/name` 或 `pi.setSessionName()` 修改会话显示名称时。
+
+**返回值意义**：无。
+
+```typescript
+pi.on("session_info_changed", async (event, ctx) => {
+  // event.name — 新名称
+});
+```
+
+#### session_before_switch — 切换会话前
+
+**触发时机**：执行 `/new` 或 `/resume` 切换会话之前。
+
+**返回值意义**：可以取消切换。
+
+```typescript
+pi.on("session_before_switch", async (event, ctx) => {
+  // event.reason — "new" | "resume"
+  // event.targetSessionFile — 目标会话文件（resume 时有值）
+  if (event.reason === "new") {
+    const ok = await ctx.ui.confirm("确定？", "丢弃当前对话？");
+    if (!ok) return { cancel: true };
+  }
+});
+```
+
+| 返回值字段 | 类型              | 说明          |
+| ---------- | ----------------- | ------------- |
+| `cancel`   | `boolean`（可选） | true=取消切换 |
+
+#### session_before_fork — 分支前
+
+**触发时机**：执行 `/fork` 或 `/clone` 之前。
+
+**返回值意义**：可以取消分支操作。
+
+```typescript
+pi.on("session_before_fork", async (event, ctx) => {
+  // event.entryId — 选中的条目
+  // event.position — "before"(/fork) | "at"(/clone)
+  return { cancel: true };
+});
+```
+
+| 返回值字段                | 类型              | 说明          |
+| ------------------------- | ----------------- | ------------- |
+| `cancel`                  | `boolean`（可选） | true=取消分支 |
+| `skipConversationRestore` | `boolean`（可选） | 跳过对话恢复  |
+
+#### session_before_compact — 压缩前
+
+**触发时机**：自动或手动压缩上下文之前。
+
+**返回值意义**：可以取消压缩，或提供自定义压缩摘要。
+
+```typescript
+pi.on("session_before_compact", async (event, ctx) => {
+  // event.reason — "manual" | "threshold" | "overflow"
+  // event.willRetry — 压缩后是否自动重试
+
+  return { cancel: true }; // 取消压缩
+
+  // 或提供自定义压缩结果：
+  return {
+    compaction: {
+      summary: "用户和助手讨论了项目架构...", // 自定义摘要
+      firstKeptEntryId: "xxx",
+      tokensBefore: 5000,
+    },
+  };
+});
+```
+
+| 返回值字段   | 类型                       | 说明                            |
+| ------------ | -------------------------- | ------------------------------- |
+| `cancel`     | `boolean`（可选）          | true=取消压缩                   |
+| `compaction` | `CompactionResult`（可选） | 用自己的摘要代替 Pi 的 LLM 压缩 |
+
+#### session_compact — 压缩完成
+
+**触发时机**：压缩执行完成后。
+
+**返回值意义**：无。只能监听。
+
+```typescript
+pi.on("session_compact", async (event, ctx) => {
+  // event.compactionEntry — 压缩条目
+  // event.fromExtension — 是否由扩展提供摘要
+  // event.reason — 压缩原因
+  // event.willRetry — 是否重试
+});
+```
+
+#### session_shutdown — 会话关闭
+
+**触发时机**：会话运行时被销毁时（退出、重载、切换、分支）。
+
+**返回值意义**：无。用于清理插件占用的资源。
+
+`event.reason` 取值：`"quit"`（退出）、`"reload"`（重载）、`"new"`（新会话）、`"resume"`（切换）、`"fork"`（分支）
+
+```typescript
+pi.on("session_shutdown", async (event, ctx) => {
+  // 关闭插件占用的资源
+  await fileWatcher?.close();
+  await tempFilesCleanup();
+});
+```
+
+#### session_before_tree / session_tree — 树导航
+
+**触发时机**：用户用 `/tree` 在会话树中导航之前/之后。
+
+**返回值意义**：before 可以取消或自定义摘要。after 只能监听。
+
+```typescript
+// 导航前：可取消或自定义摘要
+pi.on("session_before_tree", async (event, ctx) => {
+  return { cancel: true };
+  // 或：
+  return {
+    summary: { summary: "...摘要...", details: {} },
+    customInstructions: "专注最近的错误修复",
+    label: "bug-fix-checkpoint",
+  };
+});
+
+// 导航后：只通知
+pi.on("session_tree", async (event, ctx) => {
+  // event.newLeafId, event.oldLeafId — 导航前后的节点
+});
+```
+
+| 返回值字段            | 类型              | 说明                                        |
+| --------------------- | ----------------- | ------------------------------------------- |
+| `cancel`              | `boolean`（可选） | true=取消导航                               |
+| `summary`             | `object`（可选）  | 用自己的摘要代替 LLM 生成的                 |
+| `customInstructions`  | `string`（可选）  | 覆盖摘要生成的指令                          |
+| `replaceInstructions` | `boolean`（可选） | true=用 customInstructions 完全替换默认指令 |
+| `label`               | `string`（可选）  | 给摘要条目打标签                            |
+
+#### before_agent_start — Agent 开始前
+
+**触发时机**：用户提交 prompt 后，Agent 循环开始之前。
+
+**返回值意义**：可以注入自定义消息（会进入 LLM 上下文）或替换本次系统提示。
+
+```typescript
+pi.on("before_agent_start", async (event, ctx) => {
+  // event.prompt — 用户输入
+  // event.images — 图片附件
+  // event.systemPrompt — 当前系统提示
+  // event.systemPromptOptions — 系统提示的原始构建数据
+
+  return {
+    // 注入自定义消息到 LLM 上下文
+    message: {
+      customType: "reminder",
+      content: "提醒：回答尽量简洁",
+      display: false, // true=TUI 显示, false=隐藏
+    },
+    // 替换本次系统提示（多个扩展会链式追加）
+    systemPrompt: event.systemPrompt + "\n\n额外规则：用中文回答",
+  };
+});
+```
+
+| 返回值字段     | 类型                    | 说明                          |
+| -------------- | ----------------------- | ----------------------------- |
+| `message`      | `CustomMessage`（可选） | 注入到 LLM 上下文的自定义消息 |
+| `systemPrompt` | `string`（可选）        | 替换本次系统提示              |
+
+#### agent_start / agent_end / agent_settled — Agent 生命周期
+
+**触发时机**：Agent 开始处理、完成本轮回合、完全空闲。
+
+**返回值意义**：无。只能监听。
+
+```typescript
+pi.on("agent_start", async (_event, ctx) => {
+  ctx.ui.setStatus("agent", "工作中...");
+});
+
+pi.on("agent_end", async (event, ctx) => {
+  // event.messages — 本轮新增的消息
+});
+
+pi.on("agent_settled", async (_event, ctx) => {
+  // 所有处理（含重试、压缩、队列后续）都完成了
+  ctx.ui.setStatus("agent", undefined);
+});
+```
+
+#### turn_start / turn_end — 回合生命周期
+
+**触发时机**：每次 LLM 调用 + 工具调用构成一个回合。
+
+**返回值意义**：无。只能监听。
+
+```typescript
+pi.on("turn_start", async (event, ctx) => {
+  // event.turnIndex — 回合序号
+});
+
+pi.on("turn_end", async (event, ctx) => {
+  // event.message — 助手回复
+  // event.toolResults — 本回合工具结果
+});
+```
+
+#### message_start / message_update / message_end — 消息生命周期
+
+**触发时机**：一条消息从开始到完成的整个过程。
+
+**返回值意义**：只有 `message_end` 可以替换完成的消息（必须保持 role 不变）。
+
+```typescript
+// 流式文本更新（最常用的事件）
+pi.on("message_update", async (event, ctx) => {
+  // event.message — 当前累积的完整消息
+  // event.assistantMessageEvent — 增量类型：
+  //   text_delta — 文本增量（delta 字段）
+  //   thinking_delta — 思考过程
+  //   toolcall_delta — 工具调用参数
+  if (event.assistantMessageEvent?.type === "text_delta") {
+    process.stdout.write(event.assistantMessageEvent.delta);
+  }
+});
+
+// 消息完成：可以替换最终消息
+pi.on("message_end", async (event, ctx) => {
+  // event.message — 完成的消息
+  if (event.message.role !== "assistant") return;
+  return {
+    message: {
+      ...event.message,
+      usage: { ...event.message.usage, cost: { total: 0.123 } },
+    },
+  };
+});
+```
+
+#### tool_execution_start / tool_execution_update / tool_execution_end — 工具执行
+
+**触发时机**：工具从开始执行到完成的整个过程。
+
+**返回值意义**：无。只能监听。
+
+```typescript
+pi.on("tool_execution_start", async (event, ctx) => {
+  // event.toolCallId, event.toolName, event.args
+  ctx.ui.setStatus("tool", `正在使用: ${event.toolName}`);
+});
+
+pi.on("tool_execution_update", async (event, ctx) => {
+  // event.partialResult — 累积的进度数据
+});
+
+pi.on("tool_execution_end", async (event, ctx) => {
+  // event.result — 完整结果
+  // event.isError — 是否出错
+  ctx.ui.setStatus("tool", undefined);
+});
+```
+
+#### context — 修改 LLM 上下文
+
+**触发时机**：每次 LLM 调用之前，消息已转换但尚未发送。
+
+**返回值意义**：可以修改发给 LLM 的消息列表。`event.messages` 是深拷贝，修改它不影响原始会话。
+
+```typescript
+pi.on("context", async (event, ctx) => {
+  // event.messages — 将发给 LLM 的消息（深拷贝）
+  const filtered = event.messages.filter(m => !shouldPrune(m));
+  return { messages: filtered };
+});
+```
+
+| 返回值字段 | 类型                     | 说明                |
+| ---------- | ------------------------ | ------------------- |
+| `messages` | `AgentMessage[]`（可选） | 替换发给 LLM 的消息 |
+
+#### before_provider_headers — 修改 HTTP 头
+
+**触发时机**：HTTP 请求头已组装完毕，即将发送。
+
+**返回值意义**：无。直接在 `event.headers` 上原地修改。
+
+```typescript
+pi.on("before_provider_headers", (event, ctx) => {
+  event.headers["x-custom"] = "value";  // 添加头
+  event.headers["X-OpenRouter-Title"] = null; // 删除头（设为 null）
+});
+```
+
+#### before_provider_request — 修改 Provider 请求
+
+**触发时机**：Provider 专用载荷已构建完成，即将发送。
+
+**返回值意义**：返回新值替换整个请求载荷。返回 `undefined` 保持原样。
+
+```typescript
+pi.on("before_provider_request", async (event, ctx) => {
+  return modifiedPayload; // 替换请求载荷
+});
+```
+
+#### after_provider_response — Provider 响应
+
+**触发时机**：收到 HTTP 响应后，流式内容消费之前。
+
+**返回值意义**：无。只能监听。
+
+```typescript
+pi.on("after_provider_response", (event, ctx) => {
+  // event.status — HTTP 状态码
+  // event.headers — 响应头
+  if (event.status === 429) {
+    console.log("被限流", event.headers["retry-after"]);
+  }
+});
+```
+
+#### model_select / thinking_level_select — 模型/思考级别变更
+
+**触发时机**：模型或思考级别被修改时。
+
+**返回值意义**：无。只能监听。
+
+```typescript
+pi.on("model_select", async (event, ctx) => {
+  // event.model — 新模型
+  // event.previousModel — 旧模型
+  // event.source — "set" | "cycle" | "restore"
+  ctx.ui.setStatus("model", `${event.model.provider}/${event.model.id}`);
+});
+
+pi.on("thinking_level_select", async (event, ctx) => {
+  // event.level — 新级别
+  // event.previousLevel — 旧级别
+});
+```
+
+#### tool_call — 工具调用前（可阻止）
+
+**触发时机**：LLM 请求调用工具时，参数已验证但尚未执行。
+
+**返回值意义**：可以阻止工具执行。如需修改参数，直接在 `event.input` 上原地修改。
+
+```typescript
+pi.on("tool_call", async (event, ctx) => {
+  // event.toolName — 工具名
+  // event.input — 工具参数（可原地修改）
+
+  // 阻止危险命令
+  if (event.toolName === "bash" && event.input.command.includes("rm -rf")) {
+    return { block: true, reason: "危险命令已阻止" };
+  }
+
+  // 修改参数
+  if (event.toolName === "bash") {
+    event.input.command = `source ~/.profile\n${event.input.command}`;
+  }
+});
+```
+
+| 返回值字段 | 类型              | 说明                   |
+| ---------- | ----------------- | ---------------------- |
+| `block`    | `boolean`（可选） | true=阻止工具执行      |
+| `reason`   | `string`（可选）  | 阻止原因（显示给 LLM） |
+
+#### tool_result — 工具结果处理（可修改）
+
+**触发时机**：工具执行完成后，结果发给 LLM 之前。
+
+**返回值意义**：可以修改工具的结果内容、附加数据或错误标记。多个处理器链式执行，每个看到的是上一个修改后的结果。
+
+```typescript
+pi.on("tool_result", async (event, ctx) => {
+  // event.content — 结果内容
+  // event.details — 附加数据
+  // event.isError — 是否错误
+
+  return {
+    content: [{ type: "text", text: "被扩展修改的结果" }],
+    details: { modified: true },
+    isError: false,
+  };
+});
+```
+
+| 返回值字段 | 类型                                      | 说明         |
+| ---------- | ----------------------------------------- | ------------ |
+| `content`  | `(TextContent \| ImageContent)[]`（可选） | 替换结果内容 |
+| `details`  | `unknown`（可选）                         | 替换附加数据 |
+| `isError`  | `boolean`（可选）                         | 覆盖错误标记 |
+
+#### user_bash — 用户执行 bash
+
+**触发时机**：用户在交互模式下用 `!` 或 `!!` 执行命令时。
+
+**返回值意义**：可以提供自定义执行器（如 SSH 远程执行）或直接返回结果。
+
+```typescript
+pi.on("user_bash", async (event, ctx) => {
+  // 方式 1：提供自定义执行器
+  return { operations: remoteBashOps };
+
+  // 方式 2：直接返回结果
+  return { result: { output: "done", exitCode: 0, cancelled: false, truncated: false } };
+});
+```
+
+| 返回值字段   | 类型                     | 说明                   |
+| ------------ | ------------------------ | ---------------------- |
+| `operations` | `BashOperations`（可选） | 自定义执行器（如 SSH） |
+| `result`     | `BashResult`（可选）     | 直接替换执行结果       |
+
+#### input — 用户输入拦截
+
+**触发时机**：用户输入消息后，在扩展命令检查之后、skill/template 展开之前。
+
+**返回值意义**：决定输入的处理方式——放行、修改、或自己处理。
+
+```typescript
+pi.on("input", async (event, ctx) => {
+  // event.text — 原始输入
+  // event.images — 图片
+  // event.source — "interactive" | "rpc" | "extension"
+  // event.streamingBehavior — 流式行为
+
+  return { action: "continue" };        // 正常放行（默认）
+  return { action: "handled" };          // 扩展已处理，不发给 LLM
+  return { action: "transform",
+           text: "修改后的文本" };        // 修改内容后发给 LLM
+});
+```
+
+| 返回值                                   | 说明                    |
+| ---------------------------------------- | ----------------------- |
+| `{ action: "continue" }`                 | 正常放行（默认行为）    |
+| `{ action: "handled" }`                  | 扩展已处理，不发给 LLM  |
+| `{ action: "transform", text, images? }` | 修改文本/图片后发给 LLM |
+
+#### 事件分类速查
+
+```
+可干预流程（有返回值）：
+  project_trust          → 决定项目信任
+  resources_discover     → 贡献资源路径
+  session_before_switch  → 取消会话切换
+  session_before_fork    → 取消分支
+  session_before_compact → 取消/自定义压缩
+  session_before_tree    → 取消/自定义树导航摘要
+  before_agent_start     → 注入消息/替换系统提示
+  message_end            → 替换最终消息
+  context                → 修改 LLM 上下文
+  before_provider_request → 替换 Provider 请求
+  tool_call              → 阻止工具执行
+  tool_result            → 修改工具结果
+  user_bash              → 替换 bash 执行器/结果
+  input                  → 拦截/转换用户输入
+
+只读通知（无返回值）：
+  session_start / session_info_changed / session_compact
+  session_shutdown / session_tree
+  agent_start / agent_end / agent_settled
+  turn_start / turn_end
+  message_start / message_update
+  tool_execution_start / tool_execution_update / tool_execution_end
+  before_provider_headers / after_provider_response
+  model_select / thinking_level_select
+```
+
+
+
+
+
+---
+
+
 
 ## ExtensionContext
 
