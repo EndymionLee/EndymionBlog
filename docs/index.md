@@ -19,28 +19,66 @@ function prev() { if (page.value > 1) page.value-- }
 function next() { if (page.value < totalPages.value) page.value++ }
 </script>
 
-<div class="hero-wrap">
-  <div class="hero-text">
-    <h1 class="hero-name">Endymion</h1>
-    <p class="hero-tagline">记录学习、项目开发与技术实践</p>
-  </div>
-  <a href="/about"><img :src="base + '/images/avatar.jpg'" class="hero-avatar" /></a>
+<div class="home-shell">
+  <section class="home-hero">
+    <div class="hero-copy">
+      <span class="hero-kicker">ENDYMION / ENGINEERING NOTES</span>
+      <h1>技术学习笔记<br><em>与项目记录</em></h1>
+      <p>Agent设计、算法设计、后端开发 学习笔记和项目记录</p>
+      <div class="hero-actions">
+        <a class="hero-primary" href="#latest">阅读最新文章</a>
+        <a class="hero-secondary" href="/projects/">查看项目</a>
+      </div>
+    </div>
+    <a class="profile-card" href="/about" aria-label="关于 Endymion">
+      <img :src="base + '/images/avatar.jpg'" class="hero-avatar" />
+      <span>Endymion</span>
+      <small>Builder · Learner</small>
+    </a>
+  </section>
+
+  <section v-if="projects.length" class="featured-projects">
+    <header class="mini-heading"><span>IN PROGRESS / BUILT</span><a href="/projects/">全部项目</a></header>
+    <div class="featured-project-grid">
+      <a v-for="project in projects.slice(0, 2)" :key="project.url" :href="base + project.url" class="featured-project">
+        <div><span>SELECTED PROJECT</span><h2>{{ project.frontmatter.title }}</h2><p>{{ project.frontmatter.desc || '查看项目详情与开发记录。' }}</p></div>
+        <footer><span v-for="tag in project.frontmatter.tags?.slice(0, 3)" :key="tag">{{ tag }}</span></footer>
+      </a>
+    </div>
+  </section>
 </div>
 
-<div class="section">
-  <h2 class="section-title">近期文章</h2>
+<main id="latest" class="content-section">
+  <header class="section-heading">
+    <div>
+      <span>RECENTLY PUBLISHED</span>
+      <h2>最新内容</h2>
+    </div>
+    <p>{{ all.length }} 篇记录，持续更新中</p>
+  </header>
 
   <div v-if="posts.length === 0" class="empty">暂无文章</div>
 
-  <div v-else class="post-grid">
+  <div v-else class="content-grid">
     <template v-for="item of paged" :key="item.url">
-      <a v-if="item.isProject" :href="base + item.url" class="post-card project-card">
-        <div class="title">{{ item.frontmatter.title }}</div>
-        <div class="date" v-if="item.frontmatter.tags?.length">#{{ item.frontmatter.tags[0] }}</div>
+      <a v-if="item.isProject" :href="base + item.url" class="content-card project-card">
+        <div class="project-glow"></div>
+        <div class="card-topline"><span class="card-kind">SELECTED PROJECT</span></div>
+        <div class="card-body">
+          <h3>{{ item.frontmatter.title }}</h3>
+          <p v-if="item.frontmatter.desc">{{ item.frontmatter.desc }}</p>
+        </div>
+        <div class="project-meta">
+          <span v-if="item.frontmatter.status">{{ item.frontmatter.status }}</span>
+          <span v-for="tag in item.frontmatter.tags?.slice(0, 2)" :key="tag">{{ tag }}</span>
+        </div>
       </a>
-      <a v-else :href="base + item.url" class="post-card">
-        <div class="title">{{ item.frontmatter.title }}</div>
-        <div class="date">{{ item.frontmatter.date || '' }}</div>
+      <a v-else :href="base + item.url" class="content-card article-card">
+        <div class="card-topline"><span class="card-kind">ARTICLE</span></div>
+        <div class="card-body">
+          <h3>{{ item.frontmatter.title }}</h3>
+        </div>
+        <time>{{ item.frontmatter.date || '技术笔记' }}</time>
       </a>
     </template>
   </div>
@@ -50,40 +88,4 @@ function next() { if (page.value < totalPages.value) page.value++ }
     <span class="page-info">{{ page }} / {{ totalPages }}</span>
     <button @click="next" :disabled="page === totalPages" class="page-btn">下一页</button>
   </div>
-</div>
-
-<style>
-.hero-wrap {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 48px 24px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 36px;
-}
-.hero-name { font-size:2.2rem; font-weight:700; margin:0; line-height:1.2; }
-.hero-tagline { font-size:1rem; color:var(--vp-c-text-2); margin:6px 0 0; }
-.hero-avatar { width:90px; height:90px; border-radius:50%; object-fit:cover; flex-shrink:0; transition:transform .15s ease,box-shadow .15s ease; }
-.hero-avatar:hover { transform:scale(1.25); box-shadow:0 8px 30px rgba(0,0,0,.1); }
-.section { max-width:960px; margin:0 auto; padding:0 24px 48px; }
-.section-title { font-size:1.1rem; font-weight:600; margin:48px 0 20px; letter-spacing:.04em; color:var(--vp-c-text-2); }
-.empty { text-align:center; color:var(--vp-c-text-3); padding:48px 0; }
-
-/* 文章卡片 */
-.post-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-@media (max-width:768px) { .post-grid { grid-template-columns:repeat(2,1fr); } .hero-wrap { flex-direction:column; text-align:center; gap:16px; } }
-@media (max-width:480px) { .post-grid { grid-template-columns:1fr; } }
-.post-card { display:flex; flex-direction:column; padding:20px; border-radius:12px; border:1px solid var(--vp-c-divider); text-decoration:none; color:inherit; transition:border-color .2s,box-shadow .2s; }
-.post-card:hover { border-color:var(--vp-c-brand-1); box-shadow:0 4px 16px rgba(0,0,0,.06); }
-.title { font-size:.95rem; font-weight:600; line-height:1.5; flex:1; }
-.date { font-size:.8rem; color:var(--vp-c-text-3); margin-top:8px; }
-.pagination { display:flex; justify-content:center; align-items:center; gap:16px; margin-top:32px; }
-.page-btn { padding:6px 16px; border:1px solid var(--vp-c-divider); border-radius:8px; background:var(--vp-c-bg-soft); color:var(--vp-c-text-1); cursor:pointer; font-size:.9rem; transition:border-color .2s; }
-.page-btn:hover:not(:disabled) { border-color:var(--vp-c-brand-1); }
-.page-btn:disabled { opacity:.4; cursor:default; }
-.page-info { font-size:.85rem; color:var(--vp-c-text-2); }
-
-/* 项目卡片（荧光边框） */
-.project-card { border-color:var(--vp-c-brand-1) !important; box-shadow:0 0 10px rgba(99,102,241,0.12) !important; }
-</style>
+</main>

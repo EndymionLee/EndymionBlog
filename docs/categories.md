@@ -21,22 +21,28 @@ function toggle(name) {
 }
 </script>
 
-# 分类
+<div class="categories-page">
+  <header class="categories-hero">
+    <span>KNOWLEDGE MAP</span>
+    <h1>分类</h1>
+    <p>按主题整理的学习笔记与开发记录。</p>
+  </header>
 
-
-<div v-for="(items, name) in categories" :key="name" style="margin-bottom:0.5rem;border:1px solid var(--vp-c-divider);border-radius:8px;overflow:hidden">
-  <div @click="toggle(name)" style="padding:0.6rem 1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--vp-c-bg-soft);user-select:none;font-weight:500">
-    <span>{{ name }} ({{ items.length }})</span>
-    <span style="transition:transform .2s" :style="{ transform: open[name] ? 'rotate(90deg)' : '' }">▶</span>
+  <div v-if="catNames.length" class="category-list">
+    <section v-for="(items, name) in categories" :key="name" class="category-group" :class="{ 'is-open': open[name] }">
+      <button class="category-toggle" @click="toggle(name)" :aria-expanded="!!open[name]">
+        <span class="category-index">{{ String(catNames.indexOf(name) + 1).padStart(2, '0') }}</span>
+        <span class="category-name">{{ name }}</span>
+        <span class="category-count">{{ items.length }} 篇</span>
+        <span class="category-chevron">+</span>
+      </button>
+      <div v-if="open[name]" class="category-posts">
+        <a v-for="item in items" :key="item.url" :href="base + item.url" class="category-post">
+          <span>{{ item.frontmatter.title }}</span><time>{{ item.frontmatter.date }}</time><b>↗</b>
+        </a>
+      </div>
+    </section>
   </div>
-  <div v-if="open[name]" style="padding:0.25rem 1rem 0.5rem">
-    <div v-for="item of items" :key="item.url" style="padding:0.3rem 0">
-      <a :href="base + item.url">{{ item.frontmatter.title }}</a>
-      <span style="color:var(--vp-c-text-3);font-size:0.85rem;margin-left:0.5rem">{{ item.frontmatter.date }}</span>
-    </div>
-  </div>
-</div>
 
-<div v-if="catNames.length === 0" style="color:var(--vp-c-text-2);padding:2rem 0">
-  暂无文章
+  <div v-else class="empty">暂无文章</div>
 </div>
