@@ -20,7 +20,7 @@ status: Done
 
 安装skill，让agent探索一个网站，探索完成后，生成对应操作手册。（可以分享手册给别人）
 
-![标记元素](/images/projects/PilotBrowseMCP/EpWeb.gif)
+![标记元素](assets/Image/EpWeb.gif)
 
 探索完，在 website-manuals 文件夹下生成对应网站手册
 
@@ -40,11 +40,11 @@ website-manuals/<site>/
 
 #### 标记元素
 
-<img src="/images/projects/PilotBrowseMCP/MarkElement.gif" alt="标记元素"  />
+![标记元素](assets/Image/MarkElement.gif)
 
 #### 录制流程
 
-<img src="/images/projects/PilotBrowseMCP/RecordWorkflow.gif" alt="标记元素"  />
+![标记元素](assets/Image/RecordWorkflow.gif)
 
 ### 手册经验复用
 
