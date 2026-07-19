@@ -50,7 +50,7 @@ export default defineConfig({
     nav: [
       { text: '博客', link: '/' },
       { text: '分类', link: '/categories' },
-      { text: '项目', link: '/projects' },
+      { text: '项目', link: '/projects/' },
       { text: '关于', link: '/about' },
     ],
 
