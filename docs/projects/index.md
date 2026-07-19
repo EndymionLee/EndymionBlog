@@ -1,7 +1,6 @@
 ---
 title: 项目
 ---
-
 <script setup>
 import { data as projects } from '../.vitepress/projects.data'
 const base = ''
@@ -11,10 +10,10 @@ const base = ''
   <header class="projects-hero">
     <span>SELECTED WORK</span>
     <h1>项目</h1>
-    <p>从想法、原型到可用产品。这里收录那些值得持续打磨的实践。</p>
+    <p> </p>
   </header>
 
-  <div v-if="projects.length" class="project-showcase">
+<div v-if="projects.length" class="project-showcase">
     <a v-for="p of projects" :key="p.url" :href="base + p.url" class="showcase-card">
       <div class="showcase-orb"></div>
       <div class="showcase-top"><span>PROJECT</span></div>
@@ -29,5 +28,5 @@ const base = ''
     </a>
   </div>
 
-  <div v-else class="empty">暂无项目</div>
+<div v-else class="empty">暂无项目</div>
 </div>
