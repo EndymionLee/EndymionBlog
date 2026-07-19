@@ -25,10 +25,10 @@ function toggle(name) {
   <header class="categories-hero">
     <span>KNOWLEDGE MAP</span>
     <h1>分类</h1>
-    <p>按主题整理的学习笔记与开发记录。</p>
+    <p> </p>
   </header>
 
-  <div v-if="catNames.length" class="category-list">
+<div v-if="catNames.length" class="category-list">
     <section v-for="(items, name) in categories" :key="name" class="category-group" :class="{ 'is-open': open[name] }">
       <button class="category-toggle" @click="toggle(name)" :aria-expanded="!!open[name]">
         <span class="category-index">{{ String(catNames.indexOf(name) + 1).padStart(2, '0') }}</span>
@@ -44,5 +44,5 @@ function toggle(name) {
     </section>
   </div>
 
-  <div v-else class="empty">暂无文章</div>
+<div v-else class="empty">暂无文章</div>
 </div>
